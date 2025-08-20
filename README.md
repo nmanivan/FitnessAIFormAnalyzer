@@ -1,4 +1,4 @@
-# VisualFormDetectionAI
+# FitnessAIFormAnalyzer
 Detect form and technique flaws for fitness enthusiasts.
 
 Below I've outlined an example MVP
