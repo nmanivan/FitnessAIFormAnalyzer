@@ -1,87 +1,48 @@
-# FitnessAIFormAnalyzer
-Detect form and technique flaws for fitness enthusiasts.
+# Fitness Form Analyzer iOS App
 
-Below I've outlined an example MVP
+A real-time Fitness coaching app that analyzes your form using computer vision and provides instant audio feedback through headphones.
 
-1. Define the Core MVP Scope
-Goal: Allow users to upload a fitness video and receive feedback on form.
+## 🏀 Features
 
-Key MVP Features:
-📹 Video Upload: User uploads or records a video (e.g., squats, push-ups, deadlifts).
+- **Real-time Video Analysis**: Captures live video from your iPhone camera
+- **Pose Estimation**: Uses Vision framework for body pose detection
+- **AI Coaching**: LLM-powered feedback on Fitness technique
+- **Audio Feedback**: Real-time coaching tips through headphones
+- **Form Tracking**: Monitors shooting, dribbling, and defensive stances
 
-🧠 Pose Estimation: Use a pre-trained model to extract body landmarks (OpenPose, MediaPipe, or MoveNet).
+## 🛠 Technical Stack
 
-📝 Form Detection Logic: Compare pose data to ideal templates to detect:
+- **iOS 15.0+** with SwiftUI
+- **Vision Framework** for pose estimation
+- **AVFoundation** for camera and audio handling
+- **Speech Synthesis** for audio feedback
+- **Core ML** for on-device AI processing
 
-Knees over toes
+## 📱 Setup Instructions
 
-Back rounding
+1. Open `FitnessFormAnalyzer.xcodeproj` in Xcode
+2. Set your development team in project settings
+3. Add camera and microphone permissions to Info.plist
+4. Build and run on your iPhone
 
-Elbow angle during push-ups
+## 🔐 Permissions Required
 
-🧑‍⚕️ Feedback System: Return clear, visual or text feedback (e.g., “Lean too far forward in squat at 00:05”).
+- Camera access for video recording
+- Microphone access for audio feedback
+- Motion & Fitness for enhanced pose tracking
 
-📊 Basic UI: Simple web or mobile interface to test flow end-to-end.
+## 🎯 Usage
 
-🛠️ 2. Tech Stack Recommendations
-Layer	Tech Suggestions
-Frontend	React or SwiftUI (depending on web or iOS)
-Backend	Python (FastAPI or Flask)
-AI Model	MediaPipe, OpenPose, or MoveNet
-Storage	Firebase or AWS S3 (for video storage)
-Deployment	Vercel, Render, or AWS EC2
+1. Launch the app and grant permissions
+2. Position your phone to capture your basketball activity
+3. Start your basketball session
+4. Receive real-time audio coaching feedback
+5. Review form analysis in the app
 
-🚧 3. Build Plan (4–6 weeks)
-Week 1: Discovery & Design
-✅ Define supported exercises (e.g., squats, push-ups)
+## 🏗 Architecture
 
-🎨 Create simple UI/UX wireframes
-
-📁 Set up repo, CI/CD pipeline, and cloud storage
-
-Week 2–3: Pose Detection + Video Processing
-Integrate pose estimation model (e.g., MediaPipe)
-
-Parse joint angle and movement over time
-
-Normalize for camera position, user height if possible
-
-Week 4: Build the Feedback Engine
-Encode rule-based form flaws (e.g., "if knee passes toe by > X pixels, flag error")
-
-Map timestamps to flaws
-
-Optionally annotate frames with red/yellow markers
-
-Week 5: Frontend + Feedback Integration
-Upload video > Trigger AI > Show results
-
-Overlay visual indicators or textual feedback
-
-Week 6: Testing & Deployment
-Try 5-10 sample user videos
-
-Tune error thresholds and feedback quality
-
-Deploy and share for early user feedback
-
-🧠 Future Features (Post-MVP)
-Real-time feedback via webcam
-
-Personalized progress tracking
-
-Support for multiple angles (multi-camera setup)
-
-Integration with wearables or heart rate data
-
-Community/social feed for peer feedback
-
-📈 Suggested Metrics to Track
-Time to analyze a video
-
-Accuracy of form error detection (qualitative early on)
-
-User satisfaction score
-
-Daily active users
-
+- `ContentView`: Main app interface
+- `CameraManager`: Handles video capture and processing
+- `PoseAnalyzer`: Processes pose data and identifies basketball movements
+- `AudioFeedbackManager`: Manages text-to-speech coaching feedback
+- `BasketballCoachAI`: AI logic for technique analysis and recommendations 
