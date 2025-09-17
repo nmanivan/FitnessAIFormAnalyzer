@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1a1a1a"
     },
@@ -16,20 +16,33 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fitnessai.formanalyzer"
+      "bundleIdentifier": "com.fitnessai.formanalyzer",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a1a"
       },
-      "package": "com.fitnessai.formanalyzer"
+      "package": "com.fitnessai.formanalyzer",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-camera"
-    ]
+      "expo-camera",
+      "expo-dev-client"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b84bf9ee-4c36-4d0f-be3e-6177d3d8c7f8"
+      }
+    }
   }
 }
