@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useMovementDetection, usePoseDetection, initializeTensorFlow } from './video/videoInput';
+import { useMovementDetection, useCameraMovementDetection, usePoseDetection, initializeTensorFlow } from './video/videoInput';
 import { detectFitnessMovement, getFitnessTip } from './llm/llmArchitecture';
 import { useAudioFeedback } from './audio/audioOutput';
-import { getBasketballShootingTip, detectBasketballMovement, BASKETBALL_MOVEMENTS } from './basketball/basketballFormAnalyzer';
+import { getBasketballShootingTip, detectBasketballMovement, BASKETBALL_MOVEMENTS, resetBasketballAggregation } from './basketball/basketballFormAnalyzer';
 import styles from './styles/css/appStyles';
 
 export default function App() {
@@ -16,11 +16,11 @@ export default function App() {
   const [movementIntensity, setMovementIntensity] = useState(0);
   const [fitnessMove, setFitnessMove] = useState('none');
   const [lastSpokenTip, setLastSpokenTip] = useState('');
-  const [currentTip, setCurrentTip] = useState('Get ready to start your workout!');
+  const [currentTip, setCurrentTip] = useState('🏀 Get ready to start shooting! Position yourself below the basket.');
   const [movementHistory, setMovementHistory] = useState([]);
   const [tensorFlowReady, setTensorFlowReady] = useState(false);
   const [basketballMovement, setBasketballMovement] = useState(BASKETBALL_MOVEMENTS.SHOOTING);
-  const [formScore, setFormScore] = useState(0);
+  const [techniqueScore, setTechniqueScore] = useState(0);
 
   // Initialize TensorFlow on app start
   useEffect(() => {
@@ -34,15 +34,16 @@ export default function App() {
   // AI-powered movement detection function
   const detectMovement = detectFitnessMovement(movementHistory, fitnessMove, setFitnessMove);
 
-  // Video input/movement detection
-  useMovementDetection(
+  // Camera-based movement detection (instead of accelerometer)
+  useCameraMovementDetection(
     isAnalyzing,
     setMovement,
     setMovementIntensity,
     setMovementHistory,
     setFitnessMove,
     setLastSpokenTip,
-    detectMovement
+    detectMovement,
+    cameraRef
   );
 
   // Pose detection using MoveNet
@@ -57,33 +58,37 @@ export default function App() {
     
     if (!isAnalyzing) {
       console.log('💡 [TIPS] Not analyzing - setting ready message');
-      setCurrentTip('Get ready to start your workout!');
+      setCurrentTip('🏀 Get ready to start shooting! Position yourself below the basket.');
       lastTipRef.current = '';
       return;
     }
     
-    // Immediate feedback for common movements
+    // Immediate basketball-specific feedback
     const immediateTips = {
-      'idle': 'Get ready! Position yourself properly.',
-      'moving': 'Good tempo! Keep movements smooth.',
-      'active': 'Great intensity! Keep your core engaged.',
-      'explosive': 'Powerful movement! Focus on controlled landing.',
-      'rhythmic': 'Perfect rhythm! Keep this tempo.',
-      'sustained': 'Strong hold! Keep your form tight.',
-      'controlled': 'Precise control! Move with intention.'
+      'idle': '🏀 Get in shooting position - feet shoulder-width apart!',
+      'moving': '🏀 Good movement! Keep your elbow under the ball.',
+      'active': '🏀 Strong motion! Focus on your shooting technique.',
+      'explosive': '🏀 Powerful shot! Maintain that follow-through.',
+      'rhythmic': '🏀 Perfect rhythm! Keep your shooting form consistent.',
+      'sustained': '🏀 Strong hold! Keep your shooting hand steady.',
+      'controlled': '🏀 Precise control! Focus on your elbow positioning.'
     };
     
-    // Show immediate feedback first
-    const immediateTip = immediateTips[movement] || immediateTips[fitnessMove] || 'Keep up the great work!';
-    console.log('💡 [TIPS] Immediate tip selected:', immediateTip);
-    
-    if (immediateTip !== lastTipRef.current) {
-      console.log('💡 [TIPS] Setting immediate tip:', immediateTip);
-      setCurrentTip(immediateTip);
-      lastTipRef.current = immediateTip;
-    } else {
-      console.log('💡 [TIPS] Immediate tip unchanged, skipping update');
-    }
+           // Show immediate feedback for basketball shooting movement
+           if (movementIntensity > 1.5 || movement !== 'idle') {
+             const immediateTip = immediateTips[movement] || immediateTips[fitnessMove] || '🏀 Keep up the great shooting!';
+             console.log('💡 [TIPS] Immediate tip selected:', immediateTip);
+             
+             if (immediateTip !== lastTipRef.current) {
+               console.log('💡 [TIPS] Setting immediate tip:', immediateTip);
+               setCurrentTip(immediateTip);
+               lastTipRef.current = immediateTip;
+             } else {
+               console.log('💡 [TIPS] Immediate tip unchanged, skipping update');
+             }
+           } else {
+             console.log('💡 [TIPS] Movement too low for immediate feedback (intensity:', movementIntensity, ')');
+           }
     
     // Then get AI-enhanced tip after a longer delay (only for significant movements)
     if (tipUpdateTimeoutRef.current) {
@@ -91,9 +96,9 @@ export default function App() {
       clearTimeout(tipUpdateTimeoutRef.current);
     }
     
-    // Only call LLM for significant movements and after longer delay
-    if (movementIntensity > 0.3 || fitnessMove !== 'none') {
-      console.log('💡 [TIPS] Scheduling AI tip generation in 2 seconds (intensity:', movementIntensity, 'fitnessMove:', fitnessMove, ')');
+           // Only call LLM for basketball shooting movements and after longer delay
+           if (movementIntensity > 2.0 || fitnessMove !== 'none') {
+             console.log('💡 [TIPS] Scheduling AI tip generation in 2 seconds (intensity:', movementIntensity, 'fitnessMove:', fitnessMove, ')');
       tipUpdateTimeoutRef.current = setTimeout(async () => {
         console.log('🤖 [AI] Starting AI tip generation...');
         try {
@@ -102,7 +107,7 @@ export default function App() {
           console.log('🏀 [BASKETBALL] Using basketball-specific analysis (pose keypoints:', poseData?.summary?.highConfidenceKeypoints || 0, ')');
           const basketballResult = await getBasketballShootingTip(poseData, movementIntensity, movementHistory, basketballMovement);
           aiTip = basketballResult.tip;
-          setFormScore(basketballResult.formScore);
+          setTechniqueScore(basketballResult.formScore);
           
           // Update basketball movement type
           const detectedMovement = detectBasketballMovement(movementIntensity, movementHistory, poseData);
@@ -144,16 +149,20 @@ export default function App() {
     lastSpokenTip,
     setLastSpokenTip,
     async () => {
+      console.log('🏀 [AUDIO] Audio feedback function called - isAnalyzing:', isAnalyzing);
       // Use basketball-specific tips for audio feedback
-      if (isAnalyzing && poseData) {
+      if (isAnalyzing) {
         try {
-          const basketballResult = await getBasketballShootingTip(poseData, movementIntensity, movementHistory, basketballMovement);
-          return basketballResult.tip;
+          console.log('🏀 [AUDIO] Getting basketball tip for audio feedback...');
+                 const basketballResult = await getBasketballShootingTip(poseData, movementIntensity, movementHistory, basketballMovement);
+                 console.log('🏀 [AUDIO] Basketball technique tip received:', basketballResult.tip);
+                 return basketballResult.tip;
         } catch (error) {
           console.log('🏀 [AUDIO] Basketball tip error, using fallback:', error);
           return getFitnessTip(fitnessMove, movement, poseData);
         }
       }
+      console.log('🏀 [AUDIO] Not analyzing, using fitness tip');
       return getFitnessTip(fitnessMove, movement, poseData);
     }
   );
@@ -200,6 +209,8 @@ export default function App() {
 
   const handleStartAnalysis = () => {
     console.log('🚀 [START] User clicked Start Analysis button');
+    console.log('🚀 [START] Resetting basketball aggregation data');
+    resetBasketballAggregation();
     console.log('🚀 [START] Setting isAnalyzing to true');
     setIsAnalyzing(true);
     console.log('🚀 [START] Analysis started successfully');
@@ -257,9 +268,9 @@ export default function App() {
               <Text style={styles.basketballText}>
                 🏀 {basketballMovement.replace('_', ' ').toUpperCase()}
               </Text>
-              {formScore > 0 && (
+              {techniqueScore > 0 && (
                 <Text style={styles.formScoreText}>
-                  Form Score: {formScore}/100
+                  Technique Score: {techniqueScore}/100
                 </Text>
               )}
             </View>
